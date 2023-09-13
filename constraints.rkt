@@ -1,11 +1,14 @@
 #lang racket/base
-(require "connector.rkt" "generic.rkt" racket/contract)
+(require "connector.rkt" "generic.rkt" racket/contract racket/bool)
 (provide (contract-out (adder constraint/c)
                        (multiplier constraint/c)
+                       (divider constraint/c)
                        (constant (-> field-instance? any/c any))
                        (probe (->* ((or/c symbol? string?) any/c) (#:printer (-> any/c any)) any))))
 
-(define constraint/c (-> any/c any/c any/c any))
+(define constraint/c (opt/c (->i ((c1 any/c) (c2 any/c) (result any/c))
+                                 #:pre (c1 c2 result) (nor (connector=? c1 c2) (connector=? c1 result) (connector=? c2 result))
+                                 any)))
 
 (define ((make-constraint accumulator inverse) c1 c2 result)
   (define (process-new-value)
@@ -31,6 +34,7 @@
 
 (define adder (make-constraint add sub))
 (define multiplier (make-constraint mul div))
+(define divider (make-constraint div mul))
 
 (define (constant value connector)
   (define (self msg)

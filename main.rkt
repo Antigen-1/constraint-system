@@ -25,14 +25,17 @@
 
 ;; Code here
 
-(require "generic.rkt" "connector.rkt" "constraints.rkt" "macro.rkt")
-(provide (all-from-out "generic.rkt" "connector.rkt" "constraints.rkt") define-constant define-probe)
+(require "generic.rkt" "connector.rkt" "constraints.rkt" "macro.rkt" "operator.rkt")
+(provide (all-from-out "generic.rkt" "connector.rkt" "constraints.rkt" "operator.rkt") define-constant define-probe)
 
 (module+ test
   ;; Any code in this `test` submodule runs when this file is run using DrRacket
   ;; or with `raco test`. The code here does not run when this file is
   ;; required by another module.
 
+  (define temp (make-connector))
+  (check-exn exn:fail:contract? (lambda () (adder temp temp temp)))
+  
   (struct real (num) #:methods gen:field-instance ((define (add f a) (real (+ (real-num f) (real-num a))))
                                                    (define (mul f a) (real (* (real-num f) (real-num a))))
                                                    (define (multiplicative-identity f) (real 1.0))
@@ -40,6 +43,8 @@
                                                    (define (multiplicative-inverse f) (real (/ 1.0 (real-num f))))
                                                    (define (additive-inverse f) (real (- (real-num f))))
                                                    (define (equal f a) (= (real-num f) (real-num a)))))
+
+  (define (display-real o) (display (real-num o)))
 
   (define (celsius-fahrenheit-converter c f)
     (let ((u (make-connector)) (v (make-connector)))
@@ -50,8 +55,8 @@
       (multiplier v x u)
       (adder v y f)))
 
-  (define-probe C #:name "Celsius temp" #:printer (lambda (o) (display (real-num o))))
-  (define-probe F #:name "Fahrenheit temp" #:printer (lambda (o) (display (real-num o))))
+  (define-probe C #:name "Celsius temp" #:printer display-real)
+  (define-probe F #:name "Fahrenheit temp" #:printer display-real)
   (celsius-fahrenheit-converter C F)
   
   (set-value! C (real 25.0) 'user)
@@ -59,4 +64,19 @@
   (check-exn exn:fail:contract? (lambda () (set-value! F (real 212.0) 'user)))
   (forget-value! C 'user)
   (set-value! F (real 212.0) 'user)
-  (check-true (equal (value C) (real 100.0))))
+  (check-true (equal (value C) (real 100.0)))
+
+  (define (another-celsius-fahrenheit-converter x)
+    (c+ (c* (c/ (cv (real 9.0)) (cv (real 5.0))) x)
+        (cv (real 32.0))))
+
+  (define-probe another-C #:name "another Celsius temp" #:printer display-real)
+  (define another-F (another-celsius-fahrenheit-converter another-C))
+  (probe "another Fahrenheit temp" another-F #:printer display-real)
+
+  (set-value! another-C (real 25.0) 'user)
+  (check-true (equal (value another-F) (real 77.0)))
+  (check-exn exn:fail:contract? (lambda () (set-value! another-F (real 212.0) 'user)))
+  (forget-value! another-C 'user)
+  (set-value! another-F (real 212.0) 'user)
+  (check-true (equal (value another-C) (real 100.0))))

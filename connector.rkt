@@ -7,7 +7,8 @@
           (forget-value! (-> connector any/c any))
           (connect! (-> connector any/c any))
           (has-value? (-> connector any))
-          (value (-> connector any))))
+          (value (-> connector any))
+          (connector=? (-> connector connector any))))
 
 (define (make-connector)
   (let ((value (box #f)) (has-value? (box #f)) (constraints (box null)))
@@ -51,3 +52,4 @@
   (conn 'has-value?))
 (define (value conn)
   (conn 'value))
+(define (connector=? c1 c2) (eq? c1 c2))

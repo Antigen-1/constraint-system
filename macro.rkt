@@ -2,6 +2,8 @@
 (require "connector.rkt" "constraints.rkt" (for-syntax syntax/parse racket/base racket/syntax))
 (provide define-constant define-probe)
 
+;;utilities designed for imperative-style programming
+;;macros are used here in order to reduce closure allocation
 (define-syntax (define-constant stx)
   (syntax-parse stx
     ((_ var:id value:expr)
@@ -10,7 +12,6 @@
            (let ((temp (make-connector)))
              (set-value! temp value 'temp-setter)
              temp))))))
-
 (define-syntax (define-probe stx)
   (define-syntax-class name
     #:description "probe name"
