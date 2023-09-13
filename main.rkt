@@ -25,8 +25,8 @@
 
 ;; Code here
 
-(require "generic.rkt" "connector.rkt" "constraints.rkt")
-(provide (all-from-out "generic.rkt" "connector.rkt" "constraints.rkt"))
+(require "generic.rkt" "connector.rkt" "constraints.rkt" "macro.rkt")
+(provide (all-from-out "generic.rkt" "connector.rkt" "constraints.rkt") define-constant define-probe)
 
 (module+ test
   ;; Any code in this `test` submodule runs when this file is run using DrRacket
@@ -42,23 +42,17 @@
                                                    (define (equal f a) (= (real-num f) (real-num a)))))
 
   (define (celsius-fahrenheit-converter c f)
-    (let ((u (make-connector))
-          (v (make-connector))
-          (w (make-connector))
-          (x (make-connector))
-          (y (make-connector)))
+    (let ((u (make-connector)) (v (make-connector)))
+      (define-constant w (real 9.0))
+      (define-constant x (real 5.0))
+      (define-constant y (real 32.0))
       (multiplier c w u)
       (multiplier v x u)
-      (adder v y f)
-      (constant (real 9.0) w)
-      (constant (real 5.0) x)
-      (constant (real 32.0) y)))
+      (adder v y f)))
 
-  (define C (make-connector))
-  (define F (make-connector))
+  (define-probe C #:name "Celsius temp" #:printer (lambda (o) (display (real-num o))))
+  (define-probe F #:name "Fahrenheit temp" #:printer (lambda (o) (display (real-num o))))
   (celsius-fahrenheit-converter C F)
-  (probe "Celsius temp" C #:printer (lambda (o) (display (real-num o))))
-  (probe "Fahrenheit temp" F #:printer (lambda (o) (display (real-num o))))
   
   (set-value! C (real 25.0) 'user)
   (check-true (equal (value F) (real 77.0)))
