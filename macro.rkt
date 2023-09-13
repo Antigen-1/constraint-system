@@ -13,14 +13,14 @@
 
 (define-syntax (define-probe stx)
   (define-syntax-class name
-    #:description "name"
+    #:description "probe name"
     (pattern n:string)
     (pattern n:id))
   (define-splicing-syntax-class probe
-    #:description "probe"
+    #:description "probe information"
     (pattern (~seq var:id)
              #:with variable #'var
-             #:with name #''var
+             #:with name #'var
              #:with printer #'display)
     (pattern (~seq var:id #:name n:name)
              #:with variable #'var
@@ -35,5 +35,5 @@
      (with-syntax ((temp (generate-temporary #'probe-info.variable)))
        #'(define probe-info.variable
            (let ((temp (make-connector)))
-             (probe probe-info.name temp #:printer probe-info.printer)
+             (probe 'probe-info.name temp #:printer probe-info.printer)
              temp))))))
