@@ -25,26 +25,44 @@
 
 ;; Code here
 
-
+(require "generic.rkt" "connector.rkt" "constraints.rkt")
+(provide (all-from-out "generic.rkt" "connector.rkt" "constraints.rkt"))
 
 (module+ test
   ;; Any code in this `test` submodule runs when this file is run using DrRacket
   ;; or with `raco test`. The code here does not run when this file is
   ;; required by another module.
 
-  (check-equal? (+ 2 2) 4))
+  (struct real (num) #:methods gen:field-instance ((define (add f a) (real (+ (real-num f) (real-num a))))
+                                                   (define (mul f a) (real (* (real-num f) (real-num a))))
+                                                   (define (multiplicative-identity f) (real 1.0))
+                                                   (define (additive-identity f) (real 0.0))
+                                                   (define (multiplicative-inverse f) (real (/ 1.0 (real-num f))))
+                                                   (define (additive-inverse f) (real (- (real-num f))))
+                                                   (define (equal f a) (= (real-num f) (real-num a)))))
 
-(module+ main
-  ;; (Optional) main submodule. Put code here if you need it to be executed when
-  ;; this file is run using DrRacket or the `racket` executable.  The code here
-  ;; does not run when this file is required by another module. Documentation:
-  ;; http://docs.racket-lang.org/guide/Module_Syntax.html#%28part._main-and-test%29
+  (define (celsius-fahrenheit-converter c f)
+    (let ((u (make-connector))
+          (v (make-connector))
+          (w (make-connector))
+          (x (make-connector))
+          (y (make-connector)))
+      (multiplier c w u)
+      (multiplier v x u)
+      (adder v y f)
+      (constant (real 9.0) w)
+      (constant (real 5.0) x)
+      (constant (real 32.0) y)))
 
-  (require racket/cmdline)
-  (define who (box "world"))
-  (command-line
-    #:program "my-program"
-    #:once-each
-    [("-n" "--name") name "Who to say hello to" (set-box! who name)]
-    #:args ()
-    (printf "hello ~a~n" (unbox who))))
+  (define C (make-connector))
+  (define F (make-connector))
+  (celsius-fahrenheit-converter C F)
+  (probe "Celsius temp" C #:printer (lambda (o) (display (real-num o))))
+  (probe "Fahrenheit temp" F #:printer (lambda (o) (display (real-num o))))
+  
+  (set-value! C (real 25.0) 'user)
+  (check-true (equal (value F) (real 77.0)))
+  (check-exn exn:fail:contract? (lambda () (set-value! F (real 212.0) 'user)))
+  (forget-value! C 'user)
+  (set-value! F (real 212.0) 'user)
+  (check-true (equal (value C) (real 100.0))))
