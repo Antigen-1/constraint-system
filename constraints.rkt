@@ -1,6 +1,7 @@
 #lang racket/base
 (require "connector.rkt" "generic.rkt" racket/contract racket/bool)
 (provide (contract-out (adder constraint/c)
+                       (subtracter constraint/c)
                        (multiplier constraint/c)
                        (divider constraint/c)
                        (constant (-> field-instance? any/c any))
@@ -10,12 +11,12 @@
                                  #:pre (c1 c2 result) (nor (connector=? c1 c2) (connector=? c1 result) (connector=? c2 result))
                                  any)))
 
-(define ((make-constraint accumulator inverse) c1 c2 result)
+(define ((make-constraint accumulator inverse #:commutitive? commutitive?) c1 c2 result)
   (define (process-new-value)
     (cond ((and (has-value? c1) (has-value? c2))
            (set-value! result (accumulator (value c1) (value c2)) self))
           ((and (has-value? c1) (has-value? result))
-           (set-value! c2 (inverse (value result) (value c1)) self))
+           (set-value! c2 (if commutitive? (inverse (value result) (value c1)) (accumulator (value c1) (value result))) self))
           ((and (has-value? c2) (has-value? result))
            (set-value! c1 (inverse (value result) (value c2)) self))))
   (define (process-forget-value)
@@ -32,9 +33,10 @@
   (connect! c2 self)
   (connect! result self))
 
-(define adder (make-constraint add sub))
-(define multiplier (make-constraint mul div))
-(define divider (make-constraint div mul))
+(define adder (make-constraint add sub #:commutitive? #t))
+(define subtracter (make-constraint sub add #:commutitive? #f))
+(define multiplier (make-constraint mul div #:commutitive? #t))
+(define divider (make-constraint div mul #:commutitive? #f))
 
 (define (constant value connector)
   (define (self msg)

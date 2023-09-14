@@ -66,9 +66,8 @@
   (set-value! F (real 212.0) 'user)
   (check-true (equal (value C) (real 100.0)))
 
-  (define (another-celsius-fahrenheit-converter x)
-    (c+ (c* (c/ (cv (real 9.0)) (cv (real 5.0))) x)
-        (cv (real 32.0))))
+  (define (another-celsius-fahrenheit-converter c)
+    (c+ (c* (c/ (cv (real 9.0)) (cv (real 5.0))) c) (cv (real 32.0))))
 
   (define-probe another-C #:name "another Celsius temp" #:printer display-real)
   (define another-F (another-celsius-fahrenheit-converter another-C))
@@ -79,4 +78,18 @@
   (check-exn exn:fail:contract? (lambda () (set-value! another-F (real 212.0) 'user)))
   (forget-value! another-C 'user)
   (set-value! another-F (real 212.0) 'user)
-  (check-true (equal (value another-C) (real 100.0))))
+  (check-true (equal (value another-C) (real 100.0)))
+
+  (define (one-more-celsius-fahrenheit-converter f)
+    (c/ (c* (cv (real 5.0)) (c- f (cv (real 32.0)))) (cv (real 9.0))))
+
+  (define-probe one-more-F #:name "one more Fahrenheit temp" #:printer display-real)
+  (define one-more-C (one-more-celsius-fahrenheit-converter one-more-F))
+  (probe "one more Celsius temp" one-more-C #:printer display-real)
+
+  (set-value! one-more-C (real 25.0) 'user)
+  (check-true (equal (value one-more-F) (real 77.0)))
+  (check-exn exn:fail:contract? (lambda () (set-value! one-more-F (real 212.0) 'user)))
+  (forget-value! one-more-C 'user)
+  (set-value! one-more-F (real 212.0) 'user)
+  (check-true (equal (value one-more-C) (real 100.0))))
